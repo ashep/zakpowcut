@@ -3,14 +3,13 @@ version: "3"
 vars:
   APP_NAME: "zakpowcut"
   APP_VERSION: "0.0.1"
-  APP_CONFIG: '{{.APP_CONFIG | default "config.json"}}'
   BUILD_FLAGS: "-s -w -X 'main.buildName={{.APP_NAME}}' -X 'main.buildVer={{.APP_VERSION}}/{{ARCH}}'"
 
 tasks:
   run:
     desc: "Run the application"
     cmds:
-      - go run -ldflags "{{.BUILD_FLAGS}}" main.go --config={{.APP_CONFIG}} {{.CLI_ARGS}}
+      - go run -ldflags "{{.BUILD_FLAGS}}" main.go {{.CLI_ARGS}}
 
   build:
     desc: "Build the application for the current OS and architecture"
@@ -49,9 +48,10 @@ tasks:
           GOARCH: "arm64"
 
   build.linux.amd64:
-    desc: "Build the application for MacOS, AMD64 architecture"
+    desc: "Build the application for Linux, AMD64 architecture"
     cmds:
       - task: "build"
         vars:
           GOOS: "linux"
           GOARCH: "amd64"
+
