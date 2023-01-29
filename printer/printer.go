@@ -2,7 +2,6 @@ package printer
 
 import (
 	"fmt"
-	"time"
 
 	"zakpowcut/parser"
 )
@@ -13,31 +12,31 @@ var (
 )
 
 func PrintTimeTable(tt parser.TimeTable) string {
-	var s []byte
+	var s string
 
-	s = fmt.Append(s, "  ")
+	s = "  "
 	for hn := 0; hn < 24; hn++ {
-		s = fmt.Appendf(s, " %02d", hn)
+		s += fmt.Sprintf(" %02d", hn)
 	}
-	s = fmt.Appendln(s)
+	s += fmt.Sprintf("\n")
 
 	for qn := 0; qn < 4; qn++ {
-		s = fmt.Appendf(s, "%d: ", qn+1)
+		s += fmt.Sprintf("%d: ", qn+1)
 		for hn := 0; hn < 24; hn++ {
 			if tt[qn][hn] {
-				s = fmt.Append(s, " * ")
+				s += fmt.Sprintf(" * ")
 			} else {
-				s = fmt.Append(s, " - ")
+				s += fmt.Sprintf(" - ")
 			}
 		}
-		s = fmt.Appendln(s)
+		s += fmt.Sprintf("\n")
 	}
 
-	return string(s)
+	return s
 }
 
 func PrintTimeRanges(trs parser.TimeRanges, surround string) string {
-	var s []byte
+	var s string
 
 	for _, tr := range trs {
 		v := moon
@@ -45,27 +44,8 @@ func PrintTimeRanges(trs parser.TimeRanges, surround string) string {
 			v = sun
 		}
 
-		s = fmt.Appendf(s, "%s %s%02d-%02d%s\n", v, surround, tr.Start, tr.End, surround)
+		s += fmt.Sprintf("%s %s%02d-%02d%s\n", v, surround, tr.Start, tr.End, surround)
 	}
 
-	return string(s)
-}
-
-func PrintAllTimeRanges(trs [4]parser.TimeRanges, dt time.Time, qTitle, surround string) string {
-	var s []byte
-
-	for qn := 0; qn < 4; qn++ {
-		if qTitle != "" {
-			s = fmt.Appendf(s, "%s %d\n", qTitle, qn+1)
-		}
-
-		if dt.Year() > 2022 {
-			s = fmt.Appendf(s, "**Графік на %s**\n\n", dt.Format("02.01.2006"))
-		}
-
-		s = fmt.Appendf(s, "%s", PrintTimeRanges(trs[qn], surround))
-		s = fmt.Appendln(s)
-	}
-
-	return string(s)
+	return s
 }

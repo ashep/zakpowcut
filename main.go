@@ -48,19 +48,16 @@ func main() {
 	}
 	defer l.Info("finished\n")
 
-	var st time.Time
-	if !*dry {
-		st, err = state.Get()
-		if err != nil {
-			l.Warn("failed to read state: %s", err)
-			if err = state.Save(st); err != nil {
-				l.Err("failed to create a new state: %s", err)
-				return
-			}
-			l.Info("a new state created")
+	st, err := state.Get()
+	if err != nil {
+		l.Warn("failed to read state: %s", err)
+		if err = state.Save(time.Time{}); err != nil {
+			l.Err("failed to create a new state: %s", err)
+			return
 		}
-		l.Info("last file date: %s", st.String())
+		l.Info("a new state created")
 	}
+	l.Info("last file date: %s", st.String())
 
 	httpCli, err := httpclient.New("zakpowcut", "./tmp", "", "", *dbg, l)
 	if err != nil {
@@ -90,12 +87,12 @@ func main() {
 	}
 	l.Info("time table:\n%s", printer.PrintTimeTable(tt))
 
-	if *dry {
-		return
-	}
-
 	if dt.Sub(st).String() == "0s" {
 		l.Info("this file has already been processed")
+		return
+	}
+	
+	if *dry {
 		return
 	}
 
