@@ -2,7 +2,7 @@ version: "3"
 
 vars:
   APP_NAME: "zakpowcut"
-  APP_VERSION: "0.0.4"
+  APP_VERSION: "0.0.5"
   BUILD_FLAGS: "-s -w -X 'main.buildName={{.APP_NAME}}' -X 'main.buildVer={{.APP_VERSION}}/{{ARCH}}'"
 
 tasks:

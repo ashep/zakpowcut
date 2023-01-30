@@ -48,6 +48,10 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 		return r, fmt.Errorf("failed to close file: %w", err)
 	}
 
+	if src.Bounds().Dy() > 330 {
+		return r, fmt.Errorf("image height is too big: %s", src.Bounds())
+	}
+
 	dst := image.NewRGBA(image.Rect(0, 0, 1200, 272))
 	draw.NearestNeighbor.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
 
