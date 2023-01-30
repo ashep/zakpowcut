@@ -37,8 +37,7 @@ func GetImage(ctx context.Context, cli *httpclient.Cli, l *logger.Logger) (strin
 	if imgURL == "" {
 		return "", errors.New("failed to find image on the page")
 	}
-
-	l.Debug("image found: %s", imgURL)
+	l.Info("image found: %s", imgURL)
 
 	imgURLSplit := strings.Split(imgURL, "/")
 	fName := imgURLSplit[len(imgURLSplit)-1]
