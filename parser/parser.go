@@ -68,7 +68,7 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 func ParseFileDate(pth string) (time.Time, error) {
 	var r time.Time
 
-	re, err := regexp.Compile(`\d+`)
+	re, err := regexp.Compile(`\d{4,6}`)
 	if err != nil {
 		return r, err
 	}
