@@ -42,7 +42,7 @@ func main() {
 		}
 	}
 
-	l, err := logger.New(buildName+"-"+buildVer, ll, "./log", time.Now().Format("2006-01-02"))
+	l, err := logger.New(buildName+"-"+buildVer, ll, "./log", time.Now().Format("2006-01-02")+".log")
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +91,7 @@ func main() {
 		l.Info("this file has already been processed")
 		return
 	}
-	
+
 	if *dry {
 		return
 	}
@@ -103,9 +103,9 @@ func main() {
 	}
 
 	for qn, tr := range parser.TimeTableToTimeRanges(tt) {
-		msg := fmt.Sprintf("*Графік на %s*\n\n%s", dt.Format("02\\.01\\.2006"), printer.PrintTimeRanges(tr, "`"))
+		msg := fmt.Sprintf("*Графік на %s*\n\n%s", dt.Format("02\\.01\\.2006"), printer.PrintTimeRanges(tr))
 		if err = tgCli.SendMessage(context.Background(), qTgChannels[qn], msg); err != nil {
-			l.Err("failed to send a message to to telegram: %s", err)
+			l.Err("failed to send a message to telegram: %s", err)
 			return
 		}
 	}

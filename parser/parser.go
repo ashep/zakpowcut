@@ -21,10 +21,18 @@ const (
 	stepY  = 42
 )
 
-type TimeTable [4][24]bool
+const (
+	PowerOff PowerState = iota
+	PowerOn
+	PowerPerhaps
+)
+
+type PowerState int
+
+type TimeTable [4][24]PowerState
 
 type TimeRange struct {
-	On    bool
+	State PowerState
 	Start int
 	End   int
 }
@@ -62,7 +70,17 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 			x := startX + stepX*hn
 			y := startY + stepY*qn
 			cr, cg, cb, _ := dst.At(x, y).RGBA()
-			r[qn][hn] = cr == 65535 && cg == 65535 && cb == 65535
+
+			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, cr, cg, cb)
+
+			switch {
+			case cr == 65535 && cg == 65535 && cb == 65535:
+				r[qn][hn] = PowerOn
+			case cr == 32896 && cg == 32896 && cb == 32896:
+				r[qn][hn] = PowerPerhaps
+			default:
+				r[qn][hn] = PowerOff
+			}
 		}
 	}
 
@@ -103,12 +121,12 @@ func TimeTableToTimeRanges(tt TimeTable) [4]TimeRanges {
 	for qn := 0; qn < 4; qn++ {
 		r[qn] = make([]TimeRange, 0)
 
-		cur := TimeRange{On: tt[qn][0]}
+		cur := TimeRange{State: tt[qn][0]}
 		for hn := 1; hn < 24; hn++ {
-			if tt[qn][hn] != cur.On {
+			if tt[qn][hn] != cur.State {
 				cur.End = hn
 				r[qn] = append(r[qn], cur)
-				cur = TimeRange{On: tt[qn][hn], Start: hn}
+				cur = TimeRange{State: tt[qn][hn], Start: hn}
 			} else {
 				cur.End = hn + 1
 			}

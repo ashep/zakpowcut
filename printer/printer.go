@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	sun  = []byte{226, 152, 128, 239, 184, 143}
-	moon = []byte{240, 159, 140, 145}
+	sun      = []byte{226, 152, 128, 239, 184, 143}
+	moon     = []byte{240, 159, 140, 145}
+	question = []byte{226, 157, 147}
 )
 
 func PrintTimeTable(tt parser.TimeTable) string {
@@ -23,9 +24,12 @@ func PrintTimeTable(tt parser.TimeTable) string {
 	for qn := 0; qn < 4; qn++ {
 		s += fmt.Sprintf("%d: ", qn+1)
 		for hn := 0; hn < 24; hn++ {
-			if tt[qn][hn] {
+			switch tt[qn][hn] {
+			case parser.PowerOn:
 				s += fmt.Sprintf(" * ")
-			} else {
+			case parser.PowerPerhaps:
+				s += fmt.Sprintf(" ? ")
+			default:
 				s += fmt.Sprintf(" - ")
 			}
 		}
@@ -35,16 +39,23 @@ func PrintTimeTable(tt parser.TimeTable) string {
 	return s
 }
 
-func PrintTimeRanges(trs parser.TimeRanges, surround string) string {
-	var s string
+func PrintTimeRanges(trs parser.TimeRanges) string {
+	var (
+		v []byte
+		s string
+	)
 
 	for _, tr := range trs {
-		v := moon
-		if tr.On {
+		switch tr.State {
+		case parser.PowerOn:
 			v = sun
+		case parser.PowerPerhaps:
+			v = question
+		default:
+			v = moon
 		}
 
-		s += fmt.Sprintf("%s %s%02d-%02d%s\n", v, surround, tr.Start, tr.End, surround)
+		s += fmt.Sprintf("%s `%02d-%02d`\n", v, tr.Start, tr.End)
 	}
 
 	return s
