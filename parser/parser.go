@@ -101,15 +101,23 @@ func ParseFileDate(pth string) (time.Time, error) {
 		return r, fmt.Errorf("unexpected filename: %s", n)
 	}
 
-	if len(rm[0]) != 6 && len(rm[0]) != 8 {
+	v := rm[0]
+	day, month, year := "", "", ""
+	switch len(v) {
+	case 4:
+		day = v[0:2]
+		month = v[2:4]
+		year = "20" + v[4:6]
+	case 8:
+		if v[0:3] == "202" { // year number is 4 first digits
+			year = v[0:4]
+			month = v[4:6]
+			day = v[6:8]
+		} else { // year number is 4 last digits
+			year = v[4:8]
+		}
+	default:
 		return r, fmt.Errorf("unexpected filename: %s", n)
-	}
-
-	day := rm[0][0:2]
-	month := rm[0][2:4]
-	year := "20" + rm[0][4:6]
-	if len(rm[0]) == 8 {
-		year = rm[0][4:8]
 	}
 
 	return time.Date(mustAtoi(year), time.Month(mustAtoi(month)), mustAtoi(day), 0, 0, 0, 0, time.UTC), nil
