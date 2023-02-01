@@ -110,10 +110,12 @@ func ParseFileDate(pth string) (time.Time, error) {
 		year = "20" + v[4:6]
 	case 8:
 		if v[0:3] == "202" { // year number is 4 first digits
-			year = v[0:4]
-			month = v[4:6]
 			day = v[6:8]
+			month = v[4:6]
+			year = v[0:4]
 		} else { // year number is 4 last digits
+			day = v[0:2]
+			month = v[2:4]
 			year = v[4:8]
 		}
 	default:
