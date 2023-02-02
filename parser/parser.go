@@ -56,7 +56,7 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 		return r, fmt.Errorf("failed to close file: %w", err)
 	}
 
-	if src.Bounds().Dy() > 330 {
+	if src.Bounds().Dy() > 350 {
 		return r, fmt.Errorf("image height is too big: %s", src.Bounds())
 	}
 
@@ -103,8 +103,9 @@ func ParseFileDate(pth string) (time.Time, error) {
 
 	v := rm[0]
 	day, month, year := "", "", ""
+
 	switch len(v) {
-	case 4:
+	case 6:
 		day = v[0:2]
 		month = v[2:4]
 		year = "20" + v[4:6]
