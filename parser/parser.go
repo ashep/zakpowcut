@@ -56,7 +56,7 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 		return r, fmt.Errorf("failed to close file: %w", err)
 	}
 
-	if src.Bounds().Dy() > 350 {
+	if src.Bounds().Dy() > 400 {
 		return r, fmt.Errorf("image height is too big: %s", src.Bounds())
 	}
 
