@@ -76,7 +76,7 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 			switch {
 			case cr == 65535 && cg == 65535 && cb == 65535:
 				r[qn][hn] = PowerOn
-			case cr == 32896 && cg == 32896 && cb == 32896:
+			case isGray(cr, cg, cb):
 				r[qn][hn] = PowerPerhaps
 			default:
 				r[qn][hn] = PowerOff
@@ -157,4 +157,15 @@ func mustAtoi(s string) int {
 	}
 
 	return r
+}
+
+func isGray(r, g, b uint32) bool {
+	switch {
+	case r == 32896 && g == 32896 && b == 32896:
+		return true
+	case r == 30069 && g == 29041 && b == 29041:
+		return true
+	}
+
+	return false
 }
