@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"math"
 	"os"
 	"path"
 	"regexp"
@@ -70,11 +71,14 @@ func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
 			x := startX + stepX*hn
 			y := startY + stepY*qn
 			cr, cg, cb, _ := dst.At(x, y).RGBA()
+			cr, cg, cb = cr/256, cg/256, cb/256
+
+			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, cr, cg, cb)
 
 			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, cr, cg, cb)
 
 			switch {
-			case cr == 65535 && cg == 65535 && cb == 65535:
+			case cr == 255 && cg == 255 && cb == 255:
 				r[qn][hn] = PowerOn
 			case isGray(cr, cg, cb):
 				r[qn][hn] = PowerPerhaps
@@ -160,12 +164,9 @@ func mustAtoi(s string) int {
 }
 
 func isGray(r, g, b uint32) bool {
-	switch {
-	case r == 32896 && g == 32896 && b == 32896:
-		return true
-	case r == 30069 && g == 29041 && b == 29041:
-		return true
-	}
+	rg := math.Abs(float64(int(r) - int(g)))
+	rb := math.Abs(float64(int(r) - int(b)))
+	gb := math.Abs(float64(int(g) - int(b)))
 
-	return false
+	return (rg+rb+gb)/3 < 7.0
 }

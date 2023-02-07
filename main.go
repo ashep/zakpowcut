@@ -93,6 +93,12 @@ func main() {
 	}
 
 	if *dry {
+		for qn, tr := range parser.TimeTableToTimeRanges(tt) {
+			msg := fmt.Sprintf("Черга %d\n", qn+1)
+			msg += fmt.Sprintf("*Графік на %s*\n\n%s", dt.Format("02.01.2006"), printer.PrintTimeRanges(tr))
+			l.Debug("\n%s", msg)
+		}
+
 		return
 	}
 
