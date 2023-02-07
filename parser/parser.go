@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	startX = 184
-	startY = 122
-	stepX  = 43
-	stepY  = 42
+	startX = 210
+	startY = 137
+	stepX  = 50
+	stepY  = 48
 )
 
 const (
@@ -41,54 +41,99 @@ type TimeRange struct {
 type TimeRanges []TimeRange
 
 func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
-	r := TimeTable{}
+	res := TimeTable{}
 
 	fp, err := os.Open(path)
 	if err != nil {
-		return r, fmt.Errorf("failed to open file: %w", err)
+		return res, fmt.Errorf("failed to open source file: %w", err)
 	}
 
 	src, err := png.Decode(fp)
 	if err != nil {
-		return r, fmt.Errorf("failed to decode image: %w", err)
+		return res, fmt.Errorf("failed to decode image: %w", err)
 	}
 
 	if err = fp.Close(); err != nil {
-		return r, fmt.Errorf("failed to close file: %w", err)
+		return res, fmt.Errorf("failed to close source file: %w", err)
 	}
 
 	if src.Bounds().Dy() > 400 {
-		return r, fmt.Errorf("image height is too big: %s", src.Bounds())
+		return res, fmt.Errorf("image height is too big: %s", src.Bounds())
 	}
 
-	dst := image.NewRGBA(image.Rect(0, 0, 1200, 272))
-	draw.NearestNeighbor.Scale(dst, dst.Rect, src, src.Bounds(), draw.Over, nil)
+	cropXStart, cropYStart := 0, 0
+lp1:
+	for y := 0; y < src.Bounds().Max.Y; y++ {
+		for x := 0; x < src.Bounds().Max.X; x++ {
+			r, g, b, a := src.At(x, y).RGBA()
+			if r == 0 && g == 0 && b == 0 && a == 65535 {
+				cropXStart, cropYStart = x, y
+				break lp1
+			}
+		}
+	}
 
-	l.Info("image scaled: %s -> %s", src.Bounds().String(), dst.Rect.String())
+	cropXEnd, cropYEnd := src.Bounds().Max.X, src.Bounds().Max.Y
+lp2:
+	for y := src.Bounds().Max.Y; y >= 0; y-- {
+		for x := src.Bounds().Max.X; x >= 0; x-- {
+			r, g, b, a := src.At(x, y).RGBA()
+			if r == 0 && g == 0 && b == 0 && a == 65535 {
+				cropXEnd, cropYEnd = x, y
+				break lp2
+			}
+		}
+	}
+
+	cropRect := image.Rect(cropXStart, cropYStart, cropXEnd, cropYEnd)
+	if src.Bounds().Dx()-cropRect.Bounds().Dx() > 50 {
+		return res, fmt.Errorf("crop width is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
+	}
+	if src.Bounds().Dy()-cropRect.Bounds().Dy() > 50 {
+		return res, fmt.Errorf("crop height is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
+	}
+
+	cropped := image.NewRGBA(image.Rect(0, 0, cropXEnd-cropYStart, cropYEnd-cropYStart))
+	draw.Copy(cropped, image.Point{X: 0, Y: 0}, src, cropRect, draw.Over, nil)
+	l.Debug("image cropped: %s -> %s", src.Bounds().String(), cropped.Bounds().String())
+
+	if l.Level() == logger.LvDebug {
+		if fp, err = os.Create(path + "-crop.png"); err != nil {
+			return res, fmt.Errorf("failed to open cropped file: %w", err)
+		}
+		if err = png.Encode(fp, cropped); err != nil {
+			return res, fmt.Errorf("failed to encode cropped image: %w", err)
+		}
+		if err = fp.Close(); err != nil {
+			return res, fmt.Errorf("failed to close cropped file: %w", err)
+		}
+	}
+
+	dst := image.NewRGBA(image.Rect(0, 0, 1382, 305))
+	draw.NearestNeighbor.Scale(dst, dst.Rect, cropped, cropped.Bounds(), draw.Over, nil)
+	l.Info("image scaled: %s -> %s", cropped.Bounds().String(), dst.Rect.String())
 
 	for qn := 0; qn < 4; qn++ {
 		for hn := 0; hn < 24; hn++ {
 			x := startX + stepX*hn
 			y := startY + stepY*qn
-			cr, cg, cb, _ := dst.At(x, y).RGBA()
-			cr, cg, cb = cr/256, cg/256, cb/256
-
-			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, cr, cg, cb)
-
-			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, cr, cg, cb)
+			r, g, b, _ := dst.At(x, y).RGBA()
+			r, g, b = r/256, g/256, b/256
 
 			switch {
-			case cr == 255 && cg == 255 && cb == 255:
-				r[qn][hn] = PowerOn
-			case isGray(cr, cg, cb):
-				r[qn][hn] = PowerPerhaps
+			case r == 255 && g == 255 && b == 255:
+				res[qn][hn] = PowerOn
+			case isGray(r, g, b):
+				res[qn][hn] = PowerPerhaps
 			default:
-				r[qn][hn] = PowerOff
+				res[qn][hn] = PowerOff
 			}
+
+			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, r, g, b)
 		}
 	}
 
-	return r, nil
+	return res, nil
 }
 
 func ParseFileDate(pth string) (time.Time, error) {
