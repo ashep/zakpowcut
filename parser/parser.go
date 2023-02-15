@@ -6,10 +6,6 @@ import (
 	"image/png"
 	"math"
 	"os"
-	"path"
-	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/ashep/aghpu/logger"
 	"golang.org/x/image/draw"
@@ -136,45 +132,6 @@ lp2:
 	return res, nil
 }
 
-func ParseFileDate(pth string) (time.Time, error) {
-	var r time.Time
-
-	re, err := regexp.Compile(`\d+`)
-	if err != nil {
-		return r, err
-	}
-
-	_, n := path.Split(pth)
-	rm := re.FindAllString(n, 1)
-	if len(rm) == 0 {
-		return r, fmt.Errorf("unexpected filename: %s", n)
-	}
-
-	v := rm[0]
-	day, month, year := "", "", ""
-
-	switch len(v) {
-	case 6:
-		day = v[0:2]
-		month = v[2:4]
-		year = "20" + v[4:6]
-	case 8:
-		if v[0:3] == "202" { // year number is 4 first digits
-			day = v[6:8]
-			month = v[4:6]
-			year = v[0:4]
-		} else { // year number is 4 last digits
-			day = v[0:2]
-			month = v[2:4]
-			year = v[4:8]
-		}
-	default:
-		return r, fmt.Errorf("unexpected filename: %s", n)
-	}
-
-	return time.Date(mustAtoi(year), time.Month(mustAtoi(month)), mustAtoi(day), 0, 0, 0, 0, time.UTC), nil
-}
-
 func TimeTableToTimeRanges(tt TimeTable) [4]TimeRanges {
 	var r [4]TimeRanges
 
@@ -194,15 +151,6 @@ func TimeTableToTimeRanges(tt TimeTable) [4]TimeRanges {
 
 		cur.End = 24
 		r[qn] = append(r[qn], cur)
-	}
-
-	return r
-}
-
-func mustAtoi(s string) int {
-	r, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
 	}
 
 	return r

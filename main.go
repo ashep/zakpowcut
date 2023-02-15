@@ -9,12 +9,11 @@ import (
 
 	"github.com/ashep/aghpu/httpclient"
 	"github.com/ashep/aghpu/logger"
+	"zakpowcut/dl"
+	"zakpowcut/parser"
 	"zakpowcut/printer"
 	"zakpowcut/state"
 	"zakpowcut/tg"
-
-	"zakpowcut/dl"
-	"zakpowcut/parser"
 )
 
 var qTgChannels = [4]string{
@@ -42,22 +41,24 @@ func main() {
 		}
 	}
 
-	l, err := logger.New(buildName+"-"+buildVer, ll, "./log", time.Now().Format("2006-01-02")+".log")
+	now := time.Now()
+
+	l, err := logger.New(buildName+"-"+buildVer, ll, "./log", now.Format("2006-01-02")+".log")
 	if err != nil {
 		panic(err)
 	}
 	defer l.Info("finished\n")
 
-	st, err := state.Get()
+	lastFPath, err := state.Get()
 	if err != nil {
 		l.Warn("failed to read state: %s", err)
-		if err = state.Save(time.Time{}); err != nil {
+		if err = state.Save(lastFPath); err != nil {
 			l.Err("failed to create a new state: %s", err)
 			return
 		}
-		l.Info("a new state created")
+		l.Info("a new state has been created")
 	}
-	l.Info("last file date: %s", st.String())
+	l.Info("last file: %s", lastFPath)
 
 	httpCli, err := httpclient.New("zakpowcut", "./tmp", "", "", *dbg, l)
 	if err != nil {
@@ -73,13 +74,11 @@ func main() {
 	}
 	l.Info("image downloaded: %s", fPath)
 
-	dt, err := parser.ParseFileDate(fPath)
-	if err != nil {
-		l.Err("failed to determine file date: %s", err)
+	if lastFPath == fPath {
+		l.Info("this file has already been processed")
 		return
 	}
-	l.Info("actual file date: %s", dt.String())
-
+	
 	tt, err := parser.ParseImage(fPath, l)
 	if err != nil {
 		l.Err("failed to parse image: %s", err)
@@ -87,18 +86,12 @@ func main() {
 	}
 	l.Info("time table:\n%s", printer.PrintTimeTable(tt))
 
-	if dt.Sub(st).String() == "0s" {
-		l.Info("this file has already been processed")
-		return
-	}
-
 	if *dry {
 		for qn, tr := range parser.TimeTableToTimeRanges(tt) {
 			msg := fmt.Sprintf("Черга %d\n", qn+1)
-			msg += fmt.Sprintf("*Графік на %s*\n\n%s", dt.Format("02.01.2006"), printer.PrintTimeRanges(tr))
+			msg += fmt.Sprintf("*Графік на %s*\n\n%s", now.Format("02.01.2006"), printer.PrintTimeRanges(tr))
 			l.Debug("\n%s", msg)
 		}
-
 		return
 	}
 
@@ -109,16 +102,16 @@ func main() {
 	}
 
 	for qn, tr := range parser.TimeTableToTimeRanges(tt) {
-		msg := fmt.Sprintf("*Графік на %s*\n\n%s", dt.Format("02\\.01\\.2006"), printer.PrintTimeRanges(tr))
+		msg := fmt.Sprintf("*Графік на %s*\n\n%s", now.Format("02\\.01\\.2006"), printer.PrintTimeRanges(tr))
 		if err = tgCli.SendMessage(context.Background(), qTgChannels[qn], msg); err != nil {
 			l.Err("failed to send a message to telegram: %s", err)
 			return
 		}
 	}
 
-	if err = state.Save(dt); err != nil {
+	if err = state.Save(fPath); err != nil {
 		l.Err("failed to save state: %s", err)
 		return
 	}
-	l.Info("state updated: %s", dt.String())
+	l.Info("state updated: %s", fPath)
 }
