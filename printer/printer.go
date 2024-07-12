@@ -21,7 +21,7 @@ func PrintTimeTable(tt parser.TimeTable) string {
 	}
 	s += fmt.Sprintf("\n")
 
-	for qn := 0; qn < 4; qn++ {
+	for qn := 0; qn < len(tt); qn++ {
 		s += fmt.Sprintf("%d: ", qn+1)
 		for hn := 0; hn < 24; hn++ {
 			switch tt[qn][hn] {

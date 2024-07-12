@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	startX = 210
-	startY = 137
-	stepX  = 50
-	stepY  = 48
+	startX = 180
+	startY = 85
+	stepX  = 51
+	stepY  = 40
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 
 type PowerState int
 
-type TimeTable [4][24]PowerState
+type TimeTable [6][24]PowerState
 
 type TimeRange struct {
 	State PowerState
@@ -105,15 +105,27 @@ lp2:
 		}
 	}
 
-	dst := image.NewRGBA(image.Rect(0, 0, 1382, 305))
-	draw.NearestNeighbor.Scale(dst, dst.Rect, cropped, cropped.Bounds(), draw.Over, nil)
-	l.Info("image scaled: %s -> %s", cropped.Bounds().String(), dst.Rect.String())
+	scaled := image.NewRGBA(image.Rect(0, 0, 1382, 305))
+	draw.NearestNeighbor.Scale(scaled, scaled.Rect, cropped, cropped.Bounds(), draw.Over, nil)
+	l.Info("image scaled: %s -> %s", cropped.Bounds().String(), scaled.Rect.String())
 
-	for qn := 0; qn < 4; qn++ {
+	if l.Level() == logger.LvDebug {
+		if fp, err = os.Create(path + "-scale.png"); err != nil {
+			return res, fmt.Errorf("failed to open scaled file: %w", err)
+		}
+		if err = png.Encode(fp, scaled); err != nil {
+			return res, fmt.Errorf("failed to encode scaled image: %w", err)
+		}
+		if err = fp.Close(); err != nil {
+			return res, fmt.Errorf("failed to close scaled file: %w", err)
+		}
+	}
+
+	for qn := 0; qn < len(res); qn++ {
 		for hn := 0; hn < 24; hn++ {
 			x := startX + stepX*hn
 			y := startY + stepY*qn
-			r, g, b, _ := dst.At(x, y).RGBA()
+			r, g, b, _ := scaled.At(x, y).RGBA()
 			r, g, b = r/256, g/256, b/256
 
 			switch {
@@ -125,31 +137,31 @@ lp2:
 				res[qn][hn] = PowerOff
 			}
 
-			l.Debug("color: queue=%d, hour=%d, r=%d, g=%d, b=%d", qn+1, hn, r, g, b)
+			l.Debug("color: x=%d, y=%d, queue=%d, hour=%d, r=%d, g=%d, b=%d", x, y, qn+1, hn, r, g, b)
 		}
 	}
 
 	return res, nil
 }
 
-func TimeTableToTimeRanges(tt TimeTable) [4]TimeRanges {
-	var r [4]TimeRanges
+func TimeTableToTimeRanges(tt TimeTable) []TimeRanges {
+	var r = make([]TimeRanges, len(tt))
 
-	for qn := 0; qn < 4; qn++ {
+	for qn := 0; qn < len(tt); qn++ {
 		r[qn] = make([]TimeRange, 0)
 
 		cur := TimeRange{State: tt[qn][0]}
 		for hn := 1; hn < 24; hn++ {
 			if tt[qn][hn] != cur.State {
-				cur.End = hn
+				cur.End = hn - 1
 				r[qn] = append(r[qn], cur)
 				cur = TimeRange{State: tt[qn][hn], Start: hn}
 			} else {
-				cur.End = hn + 1
+				cur.End = hn
 			}
 		}
 
-		cur.End = 24
+		cur.End = 23
 		r[qn] = append(r[qn], cur)
 	}
 
