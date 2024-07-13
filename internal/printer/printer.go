@@ -19,21 +19,21 @@ func PrintTimeTable(tt parser.TimeTable) string {
 	for hn := 0; hn < 24; hn++ {
 		s += fmt.Sprintf(" %02d", hn)
 	}
-	s += fmt.Sprintf("\n")
+	s += "\n"
 
 	for qn := 0; qn < len(tt); qn++ {
 		s += fmt.Sprintf("%d: ", qn+1)
 		for hn := 0; hn < 24; hn++ {
 			switch tt[qn][hn] {
 			case parser.PowerOn:
-				s += fmt.Sprintf(" * ")
+				s += " * "
 			case parser.PowerPerhaps:
-				s += fmt.Sprintf(" ? ")
+				s += " ? "
 			default:
-				s += fmt.Sprintf(" - ")
+				s += " - "
 			}
 		}
-		s += fmt.Sprintf("\n")
+		s += "\n"
 	}
 
 	return s
