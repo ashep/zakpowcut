@@ -7,7 +7,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/ashep/aghpu/logger"
+	"github.com/rs/zerolog"
 	"golang.org/x/image/draw"
 )
 
@@ -36,7 +36,7 @@ type TimeRange struct {
 
 type TimeRanges []TimeRange
 
-func ParseImage(path string, l *logger.Logger) (TimeTable, error) {
+func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
 	res := TimeTable{}
 
 	fp, err := os.Open(path)
@@ -91,9 +91,9 @@ lp2:
 
 	cropped := image.NewRGBA(image.Rect(0, 0, cropXEnd-cropYStart, cropYEnd-cropYStart))
 	draw.Copy(cropped, image.Point{X: 0, Y: 0}, src, cropRect, draw.Over, nil)
-	l.Debug("image cropped: %s -> %s", src.Bounds().String(), cropped.Bounds().String())
+	l.Debug().Msg(fmt.Sprintf("image cropped: %s -> %s", src.Bounds().String(), cropped.Bounds().String()))
 
-	if l.Level() == logger.LvDebug {
+	if l.GetLevel() == zerolog.DebugLevel {
 		if fp, err = os.Create(path + "-crop.png"); err != nil {
 			return res, fmt.Errorf("failed to open cropped file: %w", err)
 		}
@@ -107,9 +107,9 @@ lp2:
 
 	scaled := image.NewRGBA(image.Rect(0, 0, 1382, 305))
 	draw.NearestNeighbor.Scale(scaled, scaled.Rect, cropped, cropped.Bounds(), draw.Over, nil)
-	l.Info("image scaled: %s -> %s", cropped.Bounds().String(), scaled.Rect.String())
+	l.Info().Msg(fmt.Sprintf("image scaled: %s -> %s", cropped.Bounds().String(), scaled.Rect.String()))
 
-	if l.Level() == logger.LvDebug {
+	if l.GetLevel() == zerolog.DebugLevel {
 		if fp, err = os.Create(path + "-scale.png"); err != nil {
 			return res, fmt.Errorf("failed to open scaled file: %w", err)
 		}
@@ -137,7 +137,7 @@ lp2:
 				res[qn][hn] = PowerOff
 			}
 
-			l.Debug("color: x=%d, y=%d, queue=%d, hour=%d, r=%d, g=%d, b=%d", x, y, qn+1, hn, r, g, b)
+			l.Debug().Msg(fmt.Sprintf("color: x=%d, y=%d, queue=%d, hour=%d, r=%d, g=%d, b=%d", x, y, qn+1, hn, r, g, b))
 		}
 	}
 

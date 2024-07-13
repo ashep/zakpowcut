@@ -50,5 +50,9 @@ func Get() ([]string, error) {
 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
+	if res == nil {
+		res = make([]string, 0)
+	}
+
 	return res, nil
 }

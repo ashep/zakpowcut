@@ -5,20 +5,17 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/ashep/aghpu/httpclient"
-	"github.com/ashep/aghpu/logger"
+	"github.com/ashep/go-httpcli"
 )
 
 type Client struct {
-	h *httpclient.Cli
+	h *httpcli.Client
 	t string
-	l *logger.Logger
 }
 
-func NewClient(httpCli *httpclient.Cli, token string, l *logger.Logger) *Client {
+func NewClient(httpCli *httpcli.Client, token string) *Client {
 	return &Client{
 		h: httpCli,
-		l: l,
 		t: token,
 	}
 }

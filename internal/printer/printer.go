@@ -3,7 +3,7 @@ package printer
 import (
 	"fmt"
 
-	"zakpowcut/parser"
+	"zakpowcut/internal/parser"
 )
 
 var (
@@ -55,7 +55,16 @@ func PrintTimeRanges(trs parser.TimeRanges) string {
 			v = moon
 		}
 
-		s += fmt.Sprintf("%s `%02d-%02d`\n", v, tr.Start, tr.End)
+		diff := tr.End - tr.Start + 1
+		suffix := "годин"
+		switch {
+		case diff == 1 || diff == 21:
+			suffix += "а"
+		case diff > 1 && diff < 5 || diff > 21 && diff < 25:
+			suffix += "и"
+		}
+
+		s += fmt.Sprintf("%s `%02d-%02d` — %d %s\n", v, tr.Start, tr.End, diff, suffix)
 	}
 
 	return s
