@@ -1,0 +1,6 @@
+name: zakpowcut
+services:
+  app:
+    image: ${APP_OWNER}/${APP_NAME}:${APP_VERSION}
+    restart: unless-stopped
+    pull_policy: always
