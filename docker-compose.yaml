@@ -4,3 +4,12 @@ services:
     image: ${APP_OWNER}/${APP_NAME}:${APP_VERSION}
     restart: unless-stopped
     pull_policy: always
+    environment:
+      APP_TG_TOKEN: ${APP_TG_TOKEN}
+      APP_SKIP_TODAY: ${APP_SKIP_TODAY}
+    volumes:
+      - 'app_tmp:/app/tmp:rw'
+
+volumes:
+  app_tmp:
+    driver: local
