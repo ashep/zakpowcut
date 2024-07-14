@@ -39,6 +39,30 @@ func New(cfg Config, l zerolog.Logger) *App {
 }
 
 func (a *App) Run(ctx context.Context, _ []string) error {
+	if err := a.run(ctx); err != nil {
+		a.l.Error().Err(err).Msg("run failed")
+	}
+
+	if a.cfg.Once {
+		return nil
+	}
+
+	t := time.NewTicker(time.Hour)
+	for {
+		a.l.Info().Time("next_run_at", time.Now().Add(time.Hour)).Msg("sleeping")
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-t.C:
+			if err := a.run(ctx); err != nil {
+				a.l.Error().Err(err).Msg("run failed")
+			}
+		}
+	}
+}
+
+func (a *App) run(ctx context.Context) error {
 	for _, d := range []string{"log", "tmp"} {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			panic(err)
@@ -67,6 +91,11 @@ func (a *App) Run(ctx context.Context, _ []string) error {
 
 	imgDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	for i, fPath := range fPaths {
+		if i == 0 && a.cfg.SkipToday {
+			a.l.Info().Msg("skip today")
+			continue
+		}
+
 		// first image is for today, second image is fo tomorrow
 		imgDate = imgDate.Add(time.Hour * 24 * time.Duration(i))
 
