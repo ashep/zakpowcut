@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     pull_policy: always
     environment:
+      APP_PROXY_URLS: ${APP_PROXY_URLS}
       APP_TG_TOKEN: ${APP_TG_TOKEN}
       APP_SKIP_TODAY: ${APP_SKIP_TODAY}
     volumes:

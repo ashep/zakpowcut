@@ -63,6 +63,13 @@ func (a *App) Run(ctx context.Context, _ []string) error {
 }
 
 func (a *App) run(ctx context.Context) error {
+	httpCli := httpcli.New(a.l)
+
+	if len(a.cfg.ProxyURLs) != 0 {
+		httpCli.SetProxyURLs(a.cfg.ProxyURLs)
+		httpCli.SetMaxTries(len(a.cfg.ProxyURLs))
+	}
+
 	for _, d := range []string{"log", "tmp"} {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			panic(err)
@@ -78,9 +85,6 @@ func (a *App) run(ctx context.Context) error {
 			return fmt.Errorf("failed to create a new state: %w", err)
 		}
 	}
-
-	httpCli := httpcli.New(a.l)
-	httpCli.SetMaxTries(1)
 
 	fPaths, err := dl.GetImages(context.Background(), httpCli, a.l)
 	if err != nil {
