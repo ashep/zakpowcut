@@ -1,4 +1,6 @@
-on: push
+on:
+  - push
+  - workflow_dispatch
 jobs:
   lint:
     uses: ashep/ci/.github/workflows/go-lint.yaml@v1

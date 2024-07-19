@@ -57,24 +57,38 @@ func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
 		return res, fmt.Errorf("image height is too big: %s", src.Bounds())
 	}
 
+	gray := image.NewGray(src.Bounds())
+	draw.Draw(gray, gray.Bounds(), src, src.Bounds().Min, draw.Src)
+	if l.GetLevel() == zerolog.DebugLevel {
+		if fp, err = os.Create(path + "-gray.png"); err != nil {
+			return res, fmt.Errorf("failed to open gray file: %w", err)
+		}
+		if err = png.Encode(fp, gray); err != nil {
+			return res, fmt.Errorf("failed to encode gray image: %w", err)
+		}
+		if err = fp.Close(); err != nil {
+			return res, fmt.Errorf("failed to close gray file: %w", err)
+		}
+	}
+
 	cropXStart, cropYStart := 0, 0
 lp1:
-	for y := 0; y < src.Bounds().Max.Y; y++ {
-		for x := 0; x < src.Bounds().Max.X; x++ {
-			r, g, b, a := src.At(x, y).RGBA()
-			if r == 0 && g == 0 && b == 0 && a == 65535 {
+	for y := 0; y < gray.Bounds().Max.Y; y++ {
+		for x := 0; x < gray.Bounds().Max.X; x++ {
+			r, _, _, _ := gray.At(x, y).RGBA()
+			if r>>8 <= 0x36 {
 				cropXStart, cropYStart = x, y
 				break lp1
 			}
 		}
 	}
 
-	cropXEnd, cropYEnd := src.Bounds().Max.X, src.Bounds().Max.Y
+	cropXEnd, cropYEnd := gray.Bounds().Max.X-1, gray.Bounds().Max.Y-1
 lp2:
-	for y := src.Bounds().Max.Y; y >= 0; y-- {
-		for x := src.Bounds().Max.X; x >= 0; x-- {
-			r, g, b, a := src.At(x, y).RGBA()
-			if r == 0 && g == 0 && b == 0 && a == 65535 {
+	for y := gray.Bounds().Max.Y - 1; y >= 0; y-- {
+		for x := gray.Bounds().Max.X - 1; x >= 0; x-- {
+			r, _, _, _ := gray.At(x, y).RGBA()
+			if r>>8 <= 0x36 {
 				cropXEnd, cropYEnd = x, y
 				break lp2
 			}
@@ -82,16 +96,9 @@ lp2:
 	}
 
 	cropRect := image.Rect(cropXStart, cropYStart, cropXEnd, cropYEnd)
-	if src.Bounds().Dx()-cropRect.Bounds().Dx() > 50 {
-		return res, fmt.Errorf("crop width is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
-	}
-	if src.Bounds().Dy()-cropRect.Bounds().Dy() > 50 {
-		return res, fmt.Errorf("crop height is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
-	}
-
 	cropped := image.NewRGBA(image.Rect(0, 0, cropXEnd-cropYStart, cropYEnd-cropYStart))
-	draw.Copy(cropped, image.Point{X: 0, Y: 0}, src, cropRect, draw.Over, nil)
-	l.Debug().Msg(fmt.Sprintf("image cropped: %s -> %s", src.Bounds().String(), cropped.Bounds().String()))
+	draw.Copy(cropped, image.Point{X: 0, Y: 0}, gray, cropRect, draw.Over, nil)
+	l.Debug().Msg(fmt.Sprintf("image cropped: %s -> %s", gray.Bounds().String(), cropped.Bounds().String()))
 
 	if l.GetLevel() == zerolog.DebugLevel {
 		if fp, err = os.Create(path + "-crop.png"); err != nil {
@@ -103,6 +110,13 @@ lp2:
 		if err = fp.Close(); err != nil {
 			return res, fmt.Errorf("failed to close cropped file: %w", err)
 		}
+	}
+
+	if src.Bounds().Dx()-cropRect.Bounds().Dx() > 50 {
+		return res, fmt.Errorf("crop width is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
+	}
+	if src.Bounds().Dy()-cropRect.Bounds().Dy() > 50 {
+		return res, fmt.Errorf("crop height is too big: %s -> %s", src.Bounds().String(), cropRect.Bounds().String())
 	}
 
 	scaled := image.NewRGBA(image.Rect(0, 0, 1382, 305))
@@ -131,8 +145,8 @@ lp2:
 			switch {
 			case r == 255 && g == 255 && b == 255:
 				res[qn][hn] = PowerOn
-			case isGray(r, g, b):
-				res[qn][hn] = PowerPerhaps
+			// case isGray(r, g, b):
+			// 	res[qn][hn] = PowerPerhaps
 			default:
 				res[qn][hn] = PowerOff
 			}
