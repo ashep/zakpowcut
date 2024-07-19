@@ -30,5 +30,4 @@ jobs:
       ssh_key: ${{ secrets.DEPLOY_SSH_KEY }}
       dotenv: |
         APP_PROXY_URLS=${{ vars.APP_PROXY_URLS }}
-        APP_SKIP_TODAY=1
         APP_TG_TOKEN=${{ secrets.APP_TG_TOKEN }}
