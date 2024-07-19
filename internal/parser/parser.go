@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/png"
-	"math"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -180,12 +179,4 @@ func TimeTableToTimeRanges(tt TimeTable) []TimeRanges {
 	}
 
 	return r
-}
-
-func isGray(r, g, b uint32) bool {
-	rg := math.Abs(float64(int(r) - int(g)))
-	rb := math.Abs(float64(int(r) - int(b)))
-	gb := math.Abs(float64(int(g) - int(b)))
-
-	return (rg+rb+gb)/3 < 7.0
 }
