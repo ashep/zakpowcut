@@ -7,7 +7,6 @@ services:
     environment:
       APP_PROXY_URLS: ${APP_PROXY_URLS}
       APP_TG_TOKEN: ${APP_TG_TOKEN}
-      APP_SKIP_TODAY: ${APP_SKIP_TODAY}
     volumes:
       - 'app_tmp:/app/tmp:rw'
 
