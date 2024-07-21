@@ -3,8 +3,10 @@ package parser
 import (
 	"fmt"
 	"image"
+	"image/jpeg"
 	"image/png"
 	"os"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"golang.org/x/image/draw"
@@ -36,6 +38,11 @@ type TimeRange struct {
 type TimeRanges []TimeRange
 
 func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
+	var (
+		src image.Image
+		err error
+	)
+
 	res := TimeTable{}
 
 	fp, err := os.Open(path)
@@ -43,13 +50,22 @@ func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
 		return res, fmt.Errorf("failed to open source file: %w", err)
 	}
 
-	src, err := png.Decode(fp)
-	if err != nil {
-		return res, fmt.Errorf("failed to decode image: %w", err)
-	}
+	defer func() {
+		if err = fp.Close(); err != nil {
+			l.Error().Err(err).Msg("failed to close source file")
+		}
+	}()
 
-	if err = fp.Close(); err != nil {
-		return res, fmt.Errorf("failed to close source file: %w", err)
+	if strings.HasSuffix(strings.ToLower(path), ".png") {
+		src, err = png.Decode(fp)
+		if err != nil {
+			return res, fmt.Errorf("failed to decode image: %w", err)
+		}
+	} else if strings.HasSuffix(strings.ToLower(path), ".jpg") || strings.HasSuffix(strings.ToLower(path), ".jpeg") {
+		src, err = jpeg.Decode(fp)
+		if err != nil {
+			return res, fmt.Errorf("failed to decode image: %w", err)
+		}
 	}
 
 	if src.Bounds().Dy() > 400 {

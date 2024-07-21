@@ -26,7 +26,8 @@ func GetImages(ctx context.Context, cli *httpcli.Client, l zerolog.Logger) ([]st
 	d.Find(".news-single .container2 img").Each(func(i int, selection *goquery.Selection) {
 		src, _ := selection.Attr("src")
 
-		if !strings.HasSuffix(strings.ToLower(src), ".png") {
+		srcL := strings.ToLower(src)
+		if !(strings.HasSuffix(srcL, ".png") || !strings.HasSuffix(srcL, ".jpg") || !strings.HasSuffix(srcL, ".jpeg")) {
 			return
 		}
 
