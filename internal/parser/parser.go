@@ -75,14 +75,17 @@ func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
 	gray := image.NewGray(src.Bounds())
 	draw.Draw(gray, gray.Bounds(), src, src.Bounds().Min, draw.Src)
 	if l.GetLevel() == zerolog.DebugLevel {
-		if fp, err = os.Create(path + "-gray.png"); err != nil {
+		gfp, err := os.Create(path + "-gray.png")
+		if err != nil {
 			return res, fmt.Errorf("failed to open gray file: %w", err)
 		}
-		if err = png.Encode(fp, gray); err != nil {
+		defer func() {
+			if err = gfp.Close(); err != nil {
+				l.Error().Err(err).Msg("failed to close gray file")
+			}
+		}()
+		if err = png.Encode(gfp, gray); err != nil {
 			return res, fmt.Errorf("failed to encode gray image: %w", err)
-		}
-		if err = fp.Close(); err != nil {
-			return res, fmt.Errorf("failed to close gray file: %w", err)
 		}
 	}
 
@@ -116,14 +119,17 @@ lp2:
 	l.Debug().Msg(fmt.Sprintf("image cropped: %s -> %s", gray.Bounds().String(), cropped.Bounds().String()))
 
 	if l.GetLevel() == zerolog.DebugLevel {
-		if fp, err = os.Create(path + "-crop.png"); err != nil {
+		cfp, err := os.Create(path + "-crop.png")
+		if err != nil {
 			return res, fmt.Errorf("failed to open cropped file: %w", err)
 		}
-		if err = png.Encode(fp, cropped); err != nil {
+		defer func() {
+			if err = cfp.Close(); err != nil {
+				l.Error().Err(err).Msg("failed to close cropped file")
+			}
+		}()
+		if err = png.Encode(cfp, cropped); err != nil {
 			return res, fmt.Errorf("failed to encode cropped image: %w", err)
-		}
-		if err = fp.Close(); err != nil {
-			return res, fmt.Errorf("failed to close cropped file: %w", err)
 		}
 	}
 
@@ -139,14 +145,17 @@ lp2:
 	l.Info().Msg(fmt.Sprintf("image scaled: %s -> %s", cropped.Bounds().String(), scaled.Rect.String()))
 
 	if l.GetLevel() == zerolog.DebugLevel {
-		if fp, err = os.Create(path + "-scale.png"); err != nil {
+		sfp, err := os.Create(path + "-scale.png")
+		if err != nil {
 			return res, fmt.Errorf("failed to open scaled file: %w", err)
 		}
-		if err = png.Encode(fp, scaled); err != nil {
+		defer func() {
+			if err = sfp.Close(); err != nil {
+				l.Error().Err(err).Msg("failed to close scaled file")
+			}
+		}()
+		if err = png.Encode(sfp, scaled); err != nil {
 			return res, fmt.Errorf("failed to encode scaled image: %w", err)
-		}
-		if err = fp.Close(); err != nil {
-			return res, fmt.Errorf("failed to close scaled file: %w", err)
 		}
 	}
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/ashep/go-httpcli"
@@ -14,6 +16,10 @@ import (
 const (
 	baseURL       = "https://zakarpat.energy"
 	imagePagePath = "/customers/break-in-electricity-supply/schedule/"
+)
+
+var (
+	dtReDDMMYY = regexp.MustCompile(`\d\d.\d\d.\d\d`)
 )
 
 func GetImages(ctx context.Context, cli *httpcli.Client, l zerolog.Logger) ([]string, error) {
@@ -58,5 +64,28 @@ func GetImages(ctx context.Context, cli *httpcli.Client, l zerolog.Logger) ([]st
 		fPaths = append(fPaths, fPath)
 	}
 
+	if len(fPaths) == 2 {
+		dt1 := parseDate(fPaths[0])
+		dt2 := parseDate(fPaths[1])
+
+		if dt1 != nil && dt2 != nil && dt1.After(*dt2) {
+			fPaths[0], fPaths[1] = fPaths[1], fPaths[0]
+		}
+	}
+
 	return fPaths, nil
+}
+
+func parseDate(s string) *time.Time {
+	ss := dtReDDMMYY.FindString(s)
+	if ss != "" {
+		dt, err := time.Parse("02.01.06", ss)
+		if err != nil {
+			return nil
+		}
+
+		return &dt
+	}
+
+	return nil
 }
