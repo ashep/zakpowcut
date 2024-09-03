@@ -64,7 +64,7 @@ func PrintTimeRanges(trs parser.TimeRanges) string {
 			suffix += "и"
 		}
 
-		s += fmt.Sprintf("%s `%02d-%02d` — %d %s\n", v, tr.Start, tr.End, diff, suffix)
+		s += fmt.Sprintf("%s `%02d-%02d` — %d %s\n", v, tr.Start, tr.End+1, diff, suffix)
 	}
 
 	return s
