@@ -7,13 +7,13 @@ import (
 	"os"
 )
 
-func Save(ss []string) error {
+func Save(st map[string][]string) error {
 	fp, err := os.Create("tmp/state.json")
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 
-	b, err := json.Marshal(ss)
+	b, err := json.Marshal(st)
 	if err != nil {
 		return fmt.Errorf("failed to marshal: %w", err)
 	}
@@ -29,7 +29,7 @@ func Save(ss []string) error {
 	return nil
 }
 
-func Get() ([]string, error) {
+func Get() (map[string][]string, error) {
 	fp, err := os.Open("tmp/state.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -44,14 +44,9 @@ func Get() ([]string, error) {
 		return nil, fmt.Errorf("failed to close file: %w", err)
 	}
 
-	var res []string
-	err = json.Unmarshal(b, &res)
-	if err != nil {
+	res := make(map[string][]string)
+	if err = json.Unmarshal(b, &res); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal: %w", err)
-	}
-
-	if res == nil {
-		res = make([]string, 0)
 	}
 
 	return res, nil

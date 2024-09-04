@@ -78,12 +78,13 @@ func (a *App) run(ctx context.Context) error {
 
 	now := time.Now()
 
-	knownDates, err := state.Get()
+	stateData, err := state.Get()
 	if err != nil {
 		a.l.Warn().Err(err).Msg("failed to read state")
-		if err = state.Save([]string{}); err != nil {
+		if err = state.Save(map[string][]string{}); err != nil {
 			return fmt.Errorf("failed to create a new state: %w", err)
 		}
+		stateData = map[string][]string{}
 	}
 
 	fPaths, err := dl.GetImages(context.Background(), httpCli, a.l)
@@ -100,13 +101,25 @@ func (a *App) run(ctx context.Context) error {
 			continue
 		}
 
-		// first image is for today, second image is fo tomorrow
-		imgDate = imgDate.Add(time.Hour * 24 * time.Duration(i))
-
+		imgDate = imgDate.Add(time.Hour * 24 * time.Duration(i)) // first image is for today, second image is for tomorrow
 		imgDateStr := imgDate.Format("2006-01-02")
-		if slices.Contains(knownDates, imgDateStr) {
-			a.l.Info().Str("date", imgDateStr).Msg("date has already been processed")
+
+		imgHash, err := parser.FileChecksum(fPath)
+		if err != nil {
+			a.l.Error().Err(err).Str("path", fPath).Msg("failed to get image hash")
 			continue
+		}
+
+		imgHashes, todayExists := stateData[imgDateStr]
+		isUpdate := false
+		if todayExists {
+			if slices.Contains(imgHashes, imgHash) {
+				a.l.Info().Str("date", imgDateStr).Str("hash", imgHash).Msg("image has already been processed")
+				continue
+			}
+			isUpdate = true
+		} else {
+			imgHashes = make([]string, 0)
 		}
 
 		tt, err := parser.ParseImage(fPath, a.l)
@@ -115,10 +128,15 @@ func (a *App) run(ctx context.Context) error {
 		}
 		a.l.Info().Msgf("time table:\n%s", printer.PrintTimeTable(tt))
 
+		title := fmt.Sprintf("*Графік на %s*", imgDate.Format("02.01.2006"))
+		if isUpdate {
+			title += " *(оновлено)*"
+		}
+
 		if a.cfg.DryRun {
 			for qn, tr := range parser.TimeTableToTimeRanges(tt) {
 				msg := fmt.Sprintf("Черга %d\n", qn+1)
-				msg += fmt.Sprintf("*Графік на %s*\n\n%s", imgDate.Format("02.01.2006"), printer.PrintTimeRanges(tr))
+				msg += fmt.Sprintf("%s\n\n%s", title, printer.PrintTimeRanges(tr))
 				a.l.Debug().Msgf("\n%s", msg)
 			}
 		} else {
@@ -128,15 +146,17 @@ func (a *App) run(ctx context.Context) error {
 			}
 
 			for qn, tr := range parser.TimeTableToTimeRanges(tt) {
-				msg := fmt.Sprintf("*Графік на %s*\n\n%s", imgDate.Format("02\\.01\\.2006"), printer.PrintTimeRanges(tr))
+				msg := fmt.Sprintf("%s\n\n%s", title, printer.PrintTimeRanges(tr))
 				if err = tgCli.SendMessage(context.Background(), qTgChannels[qn], msg); err != nil {
 					return fmt.Errorf("failed to send a message to telegram: %w", err)
 				}
 			}
 		}
 
-		knownDates = append(knownDates, imgDateStr)
-		if err = state.Save(knownDates); err != nil {
+		imgHashes = append(imgHashes, imgHash)
+
+		stateData[imgDateStr] = imgHashes
+		if err = state.Save(stateData); err != nil {
 			return fmt.Errorf("failed to save state: %w", err)
 		}
 	}

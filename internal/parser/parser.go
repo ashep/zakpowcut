@@ -1,10 +1,13 @@
 package parser
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"strings"
 
@@ -36,6 +39,21 @@ type TimeRange struct {
 }
 
 type TimeRanges []TimeRange
+
+func FileChecksum(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
 
 func ParseImage(path string, l zerolog.Logger) (TimeTable, error) {
 	var (
