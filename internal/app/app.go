@@ -128,7 +128,7 @@ func (a *App) run(ctx context.Context) error {
 		}
 		a.l.Info().Msgf("time table:\n%s", printer.PrintTimeTable(tt))
 
-		title := fmt.Sprintf("*Графік на %s", imgDate.Format("02.01.2006"))
+		title := fmt.Sprintf("*Графік на %s", imgDate.Format("02\\.01\\.2006"))
 		if isUpdate {
 			title += " (оновлено)"
 		}
